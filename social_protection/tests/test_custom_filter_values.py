@@ -61,13 +61,21 @@ class BenefitPlanCustomFilterStringValueTest(TestCase):
                 criterion = {'field': 'source', 'filter': filter_name, 'type': 'string', 'value': value}
                 self.assertEqual(self._filter(criterion), [self.match.id])
 
+    def test_condition_without_operator_is_an_exact_match(self):
+        # OP-3313: "field__type=value" was accepted before OP-3251 and is still stored in
+        # payroll and payment plan criteria: it filters on json_ext__field, an exact match.
+        self.assertEqual(self._filter('source__string=UAT release 26.10'), [self.match.id])
+        self.assertEqual(self._filter('source__string=UAT'), [])
+
     def test_incomplete_criterion_is_refused(self):
         # OP-3251: an empty criteria row is stored as a dict of empty strings, or sent
         # as "____=", and was applied as a filter on json_ext____, which matches nothing.
         for criterion in (
             '____=',
+            '__iexact__string=UAT',
+            'source____string=UAT',
             'source__iexact__=UAT',
-            'source__string=UAT',
+            'source__iexact__string',
             {'field': '', 'filter': '', 'type': '', 'value': ''},
             {'field': 'source', 'filter': '', 'type': 'string', 'value': 'UAT'},
             {'field': '', 'filter': 'iexact', 'type': 'string', 'value': 'UAT'},

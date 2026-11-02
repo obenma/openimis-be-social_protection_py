@@ -78,8 +78,13 @@ class BenefitPlanCustomFilterWizard(CustomFilterWizardInterface):
             else:
                 path, separator, value = filter_part.partition('=')
                 field, __, value_type = path.rpartition('__')
-                field_name, __, filter_name = field.rpartition('__')
-                complete = separator and field_name.strip('_') and filter_name and value_type
+                if '__' in field:
+                    field_name, __, filter_name = field.rpartition('__')
+                    has_field = field_name.strip('_') and filter_name
+                else:
+                    # "<field>__<type>=<value>", without an operator, is an exact match (OP-3313)
+                    has_field = field.strip('_')
+                complete = separator and has_field and value_type
             if not complete:
                 # an empty criteria row ("____=" or a dict of empty strings) filtered on
                 # json_ext____ and matched nothing (OP-3251)
